@@ -2,13 +2,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getReports, updateStatus, deleteReport } from '../services/api';
 import { toast } from 'react-toastify';
-import { MapPin, Image as ImageIcon, Trash2, LogOut, RefreshCw, Filter } from 'lucide-react';
+import { MapPin, Image as ImageIcon, Trash2, LogOut, RefreshCw, Filter, AlertOctagon } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import axios from 'axios';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
+  const [analytics, setAnalytics] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -17,7 +20,17 @@ export default function AdminDashboard() {
       return;
     }
     fetchReports();
+    fetchAnalytics();
   }, [navigate]);
+
+  const fetchAnalytics = async () => {
+    try {
+      const res = await axios.get('http://localhost:5000/api/admin/analytics');
+      setAnalytics(res.data);
+    } catch(err) {
+      console.error(err);
+    }
+  };
 
   const fetchReports = async () => {
     setLoading(true);
@@ -65,6 +78,12 @@ export default function AdminDashboard() {
     filter === 'All'
       ? reports
       : reports.filter((r) => r.status === filter);
+
+  const sortedReports = [...filteredReports].sort((a, b) => {
+    if (a.isEmergency && !b.isEmergency) return -1;
+    if (!a.isEmergency && b.isEmergency) return 1;
+    return 0;
+  });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -157,8 +176,25 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* Analytics Chart */}
+      <div className="mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <h2 className="text-xl font-bold mb-4 text-gray-900">Resolution Time Analytics (Hours)</h2>
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={analytics}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+              <XAxis dataKey="issueType" tick={{fill: '#6B7280'}} axisLine={false} tickLine={false} />
+              <YAxis tick={{fill: '#6B7280'}} axisLine={false} tickLine={false} />
+              <Tooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+              <Legend />
+              <Bar dataKey="avgResolutionTime" fill="#4f46e5" radius={[4, 4, 0, 0]} name="Avg Resolution Time (hrs)" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       {/* Empty State */}
-      {filteredReports.length === 0 ? (
+      {sortedReports.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-3xl border border-gray-200 border-dashed">
           <p className="text-gray-500 text-lg font-medium">
             No reports found matching your criteria.
@@ -166,10 +202,10 @@ export default function AdminDashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredReports.map((report) => (
+          {sortedReports.map((report) => (
             <div
               key={report._id}
-              className="bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 border border-gray-100 overflow-hidden flex flex-col transition-all duration-300 group"
+              className={`bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 border overflow-hidden flex flex-col transition-all duration-300 group ${report.isEmergency ? 'border-red-300 ring-2 ring-red-100' : 'border-gray-100'}`}
             >
               
               {/* Image */}
@@ -196,6 +232,11 @@ export default function AdminDashboard() {
                     {report.status}
                   </span>
                 </div>
+                {report.isEmergency && (
+                  <div className="absolute top-4 left-4 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center">
+                    <AlertOctagon className="w-3 h-3 mr-1" /> EMERGENCY
+                  </div>
+                )}
               </div>
 
               {/* Content */}

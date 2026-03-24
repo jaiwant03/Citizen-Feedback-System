@@ -5,6 +5,8 @@ import ReportIssue from './pages/ReportIssue';
 import Success from './pages/Success';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import MapPage from './pages/MapPage';
+import RatingPage from './pages/RatingPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -20,6 +22,8 @@ function App() {
             <Route path="/success" element={<Success />} />
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/rate/:id/:token" element={<RatingPage />} />
           </Routes>
         </main>
         <ToastContainer position="bottom-right" />

@@ -11,18 +11,23 @@ from services.ai_service import (
     check_duplicate,
     summarize_text,
     generate_suggestion,
-    analyze_report_text
+    analyze_report_text,
+    detect_fake_complaint
 )
 
 report_bp = Blueprint('report_bp', __name__)
 
-def send_status_email(recipient_email, recipient_name, updated_status):
+def send_status_email(recipient_email, recipient_name, updated_status, complaint_id=None):
     sender_email = "jaisam710@gmail.com"
     sender_password = "bxwwmpnawwqbcpvo"
 
     subject = f"Issue Status Updated: {updated_status}"
     if updated_status == "Resolved":
         status_message = "Your issue has been resolved 🎉"
+        if complaint_id:
+            from routes.rating_routes import generate_rating_token
+            token = generate_rating_token(complaint_id)
+            status_message += f"\n\nPlease rate your experience here: http://localhost:5173/rate/{complaint_id}/{token}"
     elif updated_status == "In Progress":
         status_message = "Work has started on your issue 🚧"
     else:
@@ -63,17 +68,40 @@ def create_report():
         
         db = current_app.db
         
+        email = data.get("email")
+        if not email:
+            return jsonify({"error": "Email is required for reputation tracking"}), 400
+
+        # Create user if not exists or get current reputation
+        user = db.users.find_one({"email": email})
+        if not user:
+            db.users.insert_one({"email": email, "name": data.get("name"), "reputationScore": 100})
+            user = {"email": email, "reputationScore": 100}
+
+        if user.get("reputationScore", 100) < 50:
+            return jsonify({"error": "Complaint blocked due to low reputation score (< 50)."}), 403
+            
+        location = data.get("location")
+        if not location or "latitude" not in location or "longitude" not in location:
+            return jsonify({"error": "Auto-captured GPS location (latitude, longitude) is required."}), 400
+
+        is_emergency = data.get("isEmergency", False)
+        language = data.get("language", "en")
+        
         # Base report
         report = {
             "name": data.get("name"),
-            "email": data.get("email"),
+            "email": email,
             "issueType": data.get("issueType"),
             "description": data.get("description"),
             "image": data.get("image"), # Stores base64
             "address": data.get("address", ""), # Stores manual unique location
-            "location": data.get("location"), # Expects {latitude, longitude}
+            "location": location,
             "status": "Pending",
-            "createdAt": datetime.utcnow()
+            "createdAt": datetime.utcnow(),
+            "isFake": False,
+            "isEmergency": is_emergency,
+            "language": language
         }
 
         # AI enhancements
@@ -87,6 +115,9 @@ def create_report():
             print(f"  1.  analyze_report_text()...")
             text_analysis = analyze_report_text(report.get("issueType", ""), report.get("description", ""), report.get("location", ""), db.reports)
             report["priority"] = text_analysis["priority"]
+            if report.get("isEmergency"):
+                report["priority"] = "HIGH"
+                print("     [OK] Emergency Priority Override (HIGH)")
             report["summary"] = text_analysis["summary"]
             report["isDuplicate"] = text_analysis["isDuplicate"]
             report["aiSuggestion"] = text_analysis["aiSuggestion"]
@@ -101,6 +132,21 @@ def create_report():
             if image_analysis.get("aiSuggestion"):
                 report["aiSuggestion"] = image_analysis["aiSuggestion"]
             print(f"     [OK] aiDetection: {report['aiDetection']}")
+            
+            print(f"  3.  detect_fake_complaint()...")
+            fake_result = detect_fake_complaint(report.get("description"), report.get("image"))
+            report["isFake"] = fake_result.get("isFake", False)
+            print(f"     [OK] Fake Detection: {report['isFake']} (Confidence: {fake_result.get('confidence')})")
+            
+            # Reputation score update
+            current_score = user.get("reputationScore", 100)
+            if report["isFake"]:
+                new_score = current_score - 10
+            else:
+                new_score = current_score + 5
+            
+            db.users.update_one({"email": email}, {"$set": {"reputationScore": new_score}})
+            print(f"     [OK] User Reputation updated: {current_score} -> {new_score}")
             
             print(f"\\n[OK] All AI services completed successfully!")
             print(f"{'='*80}\\n")
@@ -171,7 +217,7 @@ def update_report_status(id):
         try:
             if report.get("email") and report.get("name"):
                 print(f"DEBUG - email step: report email={report.get('email')} name={report.get('name')} status={new_status}")
-                email_sent = send_status_email(report["email"], report["name"], new_status)
+                email_sent = send_status_email(report["email"], report["name"], new_status, str(report["_id"]))
             else:
                 print("DEBUG - email step: missing email or name, skipping email")
         except Exception as email_exc:

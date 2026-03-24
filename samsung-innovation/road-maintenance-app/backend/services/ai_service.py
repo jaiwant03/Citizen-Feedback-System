@@ -566,3 +566,60 @@ Respond STRICTLY with valid JSON only, exactly matching the format below.
         existing = reports_collection.find_one(query)
         result['isDuplicate'] = existing is not None
         return result
+
+def detect_fake_complaint(description, image_base64=None):
+    logger.info("Running AI fake complaint detection")
+    result = {'isFake': False, 'confidence': 1.0}
+    
+    if not AI_ENABLED or not genai_client:
+        logger.warning("AI disabled or not available, returning default detection (not fake)")
+        return result
+
+    try:
+        import json
+        import re
+        
+        prompt = f"""
+Analyze this road maintenance report description to determine if it is a fake, spam, completely unrealistic, or irrelevant complaint. 
+The description is: '{description}'.
+
+Respond STRICTLY with valid JSON only, exactly matching the format below.
+{{
+  "isFake": true or false,
+  "confidence": a number between 0.0 and 1.0 indicating how confident you are
+}}
+"""
+        
+        # Note: If we had a vision model call we would do it here, but to avoid high latency 
+        # for a simple text check we use the TEXT_MODEL. 
+        # The prompt instructed us to use Gemini to detect spam/unrealistic reports.
+        text = _genai_generate_text(prompt).strip()
+        
+        if not text:
+            return result
+            
+        if "```json" in text:
+            text = text.split("```json")[-1].split("```")[0]
+        elif "```" in text:
+            text = text.split("```")[1]
+            
+        text = text.strip()
+        
+        json_match = re.search(r"\{[\s\S]*\}", text)
+        if json_match:
+            text = json_match.group(0)
+
+        try:
+            parsed = json.loads(text)
+            result['isFake'] = bool(parsed.get('isFake', False))
+            result['confidence'] = float(parsed.get('confidence', 1.0))
+            logger.info(f"[OK] Fake detection successful: {result}")
+            return result
+        except Exception as je:
+            logger.warning(f"Failed to parse JSON for fake detection: {je}. Text was: {text[:100]}. Returning default.")
+            return result
+
+    except Exception as e:
+        logger.error(f"AI fake detection failed: {e}")
+        return result
+

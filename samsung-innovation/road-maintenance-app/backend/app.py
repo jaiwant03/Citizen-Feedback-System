@@ -10,6 +10,9 @@ from flask_cors import CORS
 from config.db import init_db
 from routes.report_routes import report_bp
 from routes.admin_routes import admin_bp
+from routes.worker_routes import worker_bp
+from routes.rating_routes import rating_bp
+from routes.analytics_routes import analytics_bp
 
 app = Flask(__name__)
 # Enable CORS for all routes and origins
@@ -21,6 +24,9 @@ app.db = init_db()
 # Register Blueprints
 app.register_blueprint(report_bp, url_prefix='/api')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
+app.register_blueprint(worker_bp, url_prefix='/api/worker')
+app.register_blueprint(rating_bp, url_prefix='/api')
+app.register_blueprint(analytics_bp, url_prefix='/api/admin/analytics')
 
 @app.route('/')
 def home():
