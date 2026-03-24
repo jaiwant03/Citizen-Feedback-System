@@ -1,0 +1,82 @@
+2026-03-24 09:19:28,303 [AI-SERVICE] INFO: Loading .env from: C:\Dev\Projects\Citizen_feedback project\samsung-innovation\road-maintenance-app\backend\.env
+2026-03-24 09:19:28,303 [AI-SERVICE] INFO: .env file exists: True
+2026-03-24 09:19:30,291 [AI-SERVICE] INFO: \u2713 Successfully imported google.genai library
+2026-03-24 09:19:30,291 [AI-SERVICE] INFO: GEMINI_API_KEY environment variable: AIzaS...DnFk
+2026-03-24 09:19:30,291 [AI-SERVICE] INFO: Calling _initialize_gemini()...
+2026-03-24 09:19:30,291 [AI-SERVICE] INFO: genai module available: True
+2026-03-24 09:19:30,291 [AI-SERVICE] INFO: GEMINI_API_KEY available: True
+2026-03-24 09:19:30,291 [AI-SERVICE] INFO: \U0001f504 Attempting to initialize Gemini AI client...
+2026-03-24 09:19:31,204 [AI-SERVICE] INFO: \u2713\u2713\u2713 Gemini API initialized successfully with Client API
+2026-03-24 09:19:31,204 [AI-SERVICE] INFO: After _initialize_gemini(): AI_ENABLED=True
+2026-03-24 09:19:31,204 [AI-SERVICE] INFO: TEXT_MODEL: gemini-2.5-flash
+2026-03-24 09:19:31,204 [AI-SERVICE] INFO: VISION_MODEL: gemini-2.5-flash
+2026-03-24 09:19:31,204 [AI-SERVICE] DEBUG: Calling Gemini API with model: gemini-2.5-flash
+2026-03-24 09:19:31,204 [AI-SERVICE] INFO: AFC is enabled with max remote calls: 10.
+2026-03-24 09:19:31,205 [AI-SERVICE] DEBUG: connect_tcp.started host='generativelanguage.googleapis.com' port=443 local_address=None timeout=None socket_options=None
+2026-03-24 09:19:31,212 [AI-SERVICE] DEBUG: connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001A5E77552B0>
+2026-03-24 09:19:31,213 [AI-SERVICE] DEBUG: start_tls.started ssl_context=<ssl.SSLContext object at 0x000001A5E754BE30> server_hostname='generativelanguage.googleapis.com' timeout=None
+2026-03-24 09:19:31,258 [AI-SERVICE] DEBUG: start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x000001A5E77060D0>
+2026-03-24 09:19:31,259 [AI-SERVICE] DEBUG: send_request_headers.started request=<Request [b'POST']>
+2026-03-24 09:19:31,259 [AI-SERVICE] DEBUG: send_request_headers.complete
+2026-03-24 09:19:31,259 [AI-SERVICE] DEBUG: send_request_body.started request=<Request [b'POST']>
+2026-03-24 09:19:31,259 [AI-SERVICE] DEBUG: send_request_body.complete
+2026-03-24 09:19:31,260 [AI-SERVICE] DEBUG: receive_response_headers.started request=<Request [b'POST']>
+2026-03-24 09:19:31,631 [AI-SERVICE] DEBUG: receive_response_headers.complete return_value=(b'HTTP/1.1', 429, b'Too Many Requests', [(b'X-Gemini-Service-Tier', b'standard'), (b'Vary', b'Origin'), (b'Vary', b'X-Origin'), (b'Vary', b'Referer'), (b'Content-Type', b'application/json; charset=UTF-8'), (b'Content-Encoding', b'gzip'), (b'Date', b'Tue, 24 Mar 2026 03:49:31 GMT'), (b'Server', b'scaffolding on HTTPServer2'), (b'X-XSS-Protection', b'0'), (b'X-Frame-Options', b'SAMEORIGIN'), (b'X-Content-Type-Options', b'nosniff'), (b'Server-Timing', b'gfet4t7; dur=357'), (b'Alt-Svc', b'h3=":443"; ma=2592000,h3-29=":443"; ma=2592000'), (b'Transfer-Encoding', b'chunked')])
+2026-03-24 09:19:31,632 [AI-SERVICE] INFO: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent "HTTP/1.1 429 Too Many Requests"
+2026-03-24 09:19:31,632 [AI-SERVICE] DEBUG: receive_response_body.started request=<Request [b'POST']>
+2026-03-24 09:19:31,633 [AI-SERVICE] DEBUG: receive_response_body.complete
+2026-03-24 09:19:31,633 [AI-SERVICE] DEBUG: response_closed.started
+2026-03-24 09:19:31,633 [AI-SERVICE] DEBUG: response_closed.complete
+2026-03-24 09:19:31,633 [AI-SERVICE] ERROR: \u2717 Gemini text generation failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 28.655656316s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '28s'}]}}
+2026-03-24 09:19:31,643 [AI-SERVICE] ERROR: Traceback: Traceback (most recent call last):
+  File "C:\Dev\Projects\Citizen_feedback project\samsung-innovation\road-maintenance-app\backend\services\ai_service.py", line 102, in _genai_generate_text
+    response = genai_client.models.generate_content(
+        model=TEXT_MODEL,
+        contents=prompt
+    )
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\google\genai\models.py", line 5864, in generate_content
+    response = self._generate_content(
+        model=model, contents=contents, config=parsed_config
+    )
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\google\genai\models.py", line 4526, in _generate_content
+    response = self._api_client.request(
+        'post', path, request_dict, http_options
+    )
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\google\genai\_api_client.py", line 1402, in request
+Sending Prompt...
+--- RAW GEMINI RESP ---
+
+-----------------------
+    response = self._request(http_request, http_options, stream=False)
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\google\genai\_api_client.py", line 1238, in _request
+    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\tenacity\__init__.py", line 477, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\tenacity\__init__.py", line 378, in iter
+    result = action(retry_state)
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\tenacity\__init__.py", line 420, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\tenacity\__init__.py", line 187, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\tenacity\__init__.py", line 480, in __call__
+    result = fn(*args, **kwargs)
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\google\genai\_api_client.py", line 1215, in _request_once
+    errors.APIError.raise_for_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\google\genai\errors.py", line 134, in raise_for_response
+    cls.raise_error(response.status_code, response_json, response)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\JAIWANT KARRUN.S.A\AppData\Roaming\Python\Python313\site-packages\google\genai\errors.py", line 159, in raise_error
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 28.655656316s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '28s'}]}}
+
+2026-03-24 09:19:31,768 [AI-SERVICE] DEBUG: close.started
+2026-03-24 09:19:31,768 [AI-SERVICE] DEBUG: close.complete

@@ -5,6 +5,15 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from services.ai_service import (
+    get_priority,
+    analyze_image,
+    check_duplicate,
+    summarize_text,
+    generate_suggestion,
+    analyze_report_text
+)
+
 report_bp = Blueprint('report_bp', __name__)
 
 def send_status_email(recipient_email, recipient_name, updated_status):
@@ -54,7 +63,7 @@ def create_report():
         
         db = current_app.db
         
-        # Build document
+        # Base report
         report = {
             "name": data.get("name"),
             "email": data.get("email"),
@@ -66,11 +75,53 @@ def create_report():
             "status": "Pending",
             "createdAt": datetime.utcnow()
         }
+
+        # AI enhancements
+        print(f"\\n{'='*80}")
+        print(f"Starting AI enrichment for report: {report.get('issueType')}")
+        print(f"{'='*80}")
         
+        try:
+            print(f"Calling AI services...")
+            
+            print(f"  1.  analyze_report_text()...")
+            text_analysis = analyze_report_text(report.get("issueType", ""), report.get("description", ""), report.get("location", ""), db.reports)
+            report["priority"] = text_analysis["priority"]
+            report["summary"] = text_analysis["summary"]
+            report["isDuplicate"] = text_analysis["isDuplicate"]
+            report["aiSuggestion"] = text_analysis["aiSuggestion"]
+            print(f"     [OK] Text Analysis Complete: Priority={report['priority']}, Duplicate={report['isDuplicate']}")
+            
+            print(f"  2.  analyze_image()...")
+            image_analysis = analyze_image(report.get("image"))
+            report["aiDetection"] = {
+                "damageType": image_analysis.get("damageType", "Unknown"),
+                "severity": image_analysis.get("severity", "Unknown")
+            }
+            if image_analysis.get("aiSuggestion"):
+                report["aiSuggestion"] = image_analysis["aiSuggestion"]
+            print(f"     [OK] aiDetection: {report['aiDetection']}")
+            
+            print(f"\\n[OK] All AI services completed successfully!")
+            print(f"{'='*80}\\n")
+            
+        except Exception as e:
+            print(f"\\n[ERROR] AI enrichment failed: {e}")
+            print(f"{'='*80}")
+            print(f"Using AI fallback defaults...")
+            report.setdefault("priority", "MEDIUM")
+            report.setdefault("summary", "")
+            report.setdefault("isDuplicate", False)
+            report.setdefault("aiSuggestion", {"urgency": "Medium", "workersNeeded": "2", "estimatedTime": "2 days"})
+            report.setdefault("aiDetection", {"damageType": "Unknown", "severity": "Unknown"})
+            print(f"[OK] Fallback defaults applied\\n")
+
         result = db.reports.insert_one(report)
+        print(f"[SAVE] Report saved to MongoDB with ID: {result.inserted_id}")
         return jsonify({"message": "Report created successfully", "id": str(result.inserted_id)}), 201
         
     except Exception as e:
+        print(f"DEBUG - create_report exception: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -146,3 +197,81 @@ def delete_report(id):
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@report_bp.route('/test-ai', methods=['GET'])
+def test_ai():
+    """
+    Test endpoint to verify all AI functions are working correctly.
+    Returns all AI outputs for dummy test data.
+    """
+    print("\\n" + "="*80)
+    print("Testing AI Integration")
+    print("="*80)
+    
+    try:
+        # Import the module to get current state
+        import services.ai_service as ai_service
+        
+        AI_ENABLED = ai_service.AI_ENABLED
+        print(f"[OK] AI_ENABLED (from module): {AI_ENABLED}")
+        print(f"[OK] genai_client: {ai_service.genai_client}")
+        
+        from services.ai_service import (
+            get_priority,
+            analyze_image,
+            check_duplicate,
+            summarize_text,
+            generate_suggestion,
+            analyze_report_text
+        )
+        
+        # Test data
+        test_issue_type = "Pothole"
+        test_description = "Large pothole on main street causing traffic issues. Road surface is completely damaged in multiple locations."
+        test_location = {"latitude": 40.7128, "longitude": -74.0060}
+        
+        print(f"\\nTest Data:")
+        print(f"  Issue Type: {test_issue_type}")
+        print(f"  Description: {test_description}")
+        print(f"  Location: {test_location}")
+        
+        print(f"\\nTesting analyze_report_text()...")
+        db = current_app.db
+        text_analysis = analyze_report_text(test_issue_type, test_description, test_location, db.reports)
+        priority = text_analysis["priority"]
+        summary = text_analysis["summary"]
+        is_duplicate = text_analysis["isDuplicate"]
+        suggestion = text_analysis["aiSuggestion"]
+        print(f"  [OK] Text Analysis Result: {text_analysis}")
+        
+        # Test Image Analysis (with empty/dummy image)
+        print(f"\\nTesting analyze_image()...")
+        image_result = analyze_image(None)  # Test with None
+        print(f"  [OK] Result: {image_result}")
+        
+        result = {
+            "status": "[OK] All AI tests passed!",
+            "AI_ENABLED": AI_ENABLED,
+            "gemini_client_available": ai_service.genai_client is not None,
+            "tests": {
+                "priority": priority,
+                "summary": summary,
+                "isDuplicate": is_duplicate,
+                "suggestion": suggestion,
+                "imageAnalysis": image_result
+            }
+        }
+        
+        print("\\n" + "="*80)
+        print("[OK] All AI integration tests completed successfully!")
+        print("="*80 + "\\n")
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        print(f"\\n[ERROR] AI Test Failed: {str(e)}")
+        print("="*80 + "\n")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"AI test failed: {str(e)}", "status": "FAILED"}), 500

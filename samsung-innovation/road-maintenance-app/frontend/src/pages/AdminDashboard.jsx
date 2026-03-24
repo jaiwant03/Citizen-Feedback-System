@@ -79,6 +79,19 @@ export default function AdminDashboard() {
     }
   };
 
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'HIGH':
+        return 'bg-red-100 text-red-700 border-red-200';
+      case 'MEDIUM':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'LOW':
+        return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
   if (loading && reports.length === 0) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
@@ -196,9 +209,36 @@ export default function AdminDashboard() {
                   </p>
                 </div>
 
-                <div className="text-gray-700 text-sm mb-6 grow bg-gray-50/80 p-4 rounded-2xl border border-gray-100">
+                <div className="text-gray-700 text-sm mb-4 grow bg-gray-50/80 p-4 rounded-2xl border border-gray-100">
                   <p className="line-clamp-4">{report.description}</p>
                 </div>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getPriorityColor(report.priority)}`}>
+                    Priority: {report.priority || 'N/A'}
+                  </span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${report.isDuplicate ? 'bg-red-100 text-red-700 border-red-200' : 'bg-green-100 text-green-700 border-green-200'}`}>
+                    {report.isDuplicate ? 'Duplicate' : 'Unique'}
+                  </span>
+                </div>
+
+                {report.summary && (
+                  <div className="text-sm text-gray-600 mb-4 p-3 rounded-xl bg-white border border-gray-100">
+                    <strong>AI Summary:</strong> {report.summary}
+                  </div>
+                )}
+
+                {report.aiSuggestion && (
+                  <div className="text-sm text-gray-600 mb-4 p-3 rounded-xl bg-white border border-gray-100">
+                    <strong>AI Suggestion:</strong> {report.aiSuggestion.urgency || 'Medium'}, workers: {report.aiSuggestion.workersNeeded || '2'}, eta: {report.aiSuggestion.estimatedTime || '2 days'}
+                  </div>
+                )}
+
+                {report.aiDetection && (
+                  <div className="text-sm text-gray-600 mb-4 p-3 rounded-xl bg-white border border-gray-100">
+                    <strong>Image AI:</strong> {report.aiDetection.damageType || 'Unknown'} / {report.aiDetection.severity || 'Unknown'}
+                  </div>
+                )}
 
                 {/* Location */}
                 <div className="mt-auto space-y-5 pt-5 border-t border-gray-100">
