@@ -108,7 +108,7 @@ export default function ReportIssue() {
           });
           setLocationStatus('GPS & Address acquired!');
           toast.success('Location mapped automatically');
-        } catch (e) {
+        } catch {
           setFormData({
             ...formData,
             location: { latitude: lat, longitude: lon }
@@ -152,7 +152,7 @@ export default function ReportIssue() {
   return (
     <div className="max-w-3xl mx-auto py-8 animate-in slide-in-from-bottom-4 duration-500 w-full">
       <div className={`bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden ${formData.isEmergency ? 'shadow-red-200/50 border-red-200' : 'shadow-indigo-100/50'}`}>
-        <div className={`px-8 py-8 text-white text-center transition-colors duration-300 ${formData.isEmergency ? 'bg-red-600' : 'bg-gradient-to-r from-indigo-600 to-purple-600'}`}>
+        <div className={`px-8 py-8 text-white text-center transition-colors duration-300 ${formData.isEmergency ? 'bg-red-600' : 'bg-linear-to-r from-indigo-600 to-purple-600'}`}>
           <h2 className="text-3xl font-extrabold tracking-tight">{t('report_issue')}</h2>
           <p className="mt-2 text-white/90 font-medium">{t('help_text')}</p>
         </div>
@@ -188,7 +188,7 @@ export default function ReportIssue() {
           <div className="space-y-2">
             <label className="text-sm font-semibold text-gray-700">{t('upload_image')}</label>
             <div className="flex items-center justify-center w-full">
-              <label className="flex flex-col items-center justify-center w-full min-h-[160px] border-2 border-indigo-200 border-dashed rounded-2xl cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 transition-colors relative overflow-hidden group">
+              <label className="flex flex-col items-center justify-center w-full min-h-40 border-2 border-indigo-200 border-dashed rounded-2xl cursor-pointer bg-indigo-50/50 hover:bg-indigo-50 transition-colors relative overflow-hidden group">
                 <div className="flex flex-col items-center justify-center p-6 w-full h-full text-center">
                   {formData.image ? (
                     <div className="relative w-full flex justify-center">
@@ -233,7 +233,7 @@ export default function ReportIssue() {
                         className="px-4 py-3 hover:bg-indigo-50 cursor-pointer flex items-start gap-2 border-b border-gray-50 last:border-0 transition-colors"
                         onClick={() => selectSuggestion(s)}
                       >
-                         <Navigation className="w-5 h-5 text-indigo-400 mt-0.5 flex-shrink-0" />
+                         <Navigation className="w-5 h-5 text-indigo-400 mt-0.5 shrink-0" />
                          <span className="text-sm text-gray-700">{s.display_name}</span>
                       </li>
                     ))}
@@ -256,6 +256,9 @@ export default function ReportIssue() {
                       ⚠ GPS Required
                     </span>
                   )}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {locationStatus}
                 </div>
               </div>
             </div>

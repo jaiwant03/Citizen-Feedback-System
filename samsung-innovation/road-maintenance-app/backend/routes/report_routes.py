@@ -202,9 +202,13 @@ def update_report_status(id):
             print("DEBUG - report not found for status update")
             return jsonify({"error": "Report not found"}), 404
 
+        update_fields = {"status": new_status}
+        if new_status == "Resolved":
+            update_fields["resolvedAt"] = datetime.utcnow()
+
         update_result = db.reports.update_one(
             {"_id": ObjectId(id)},
-            {"$set": {"status": new_status}}
+            {"$set": update_fields}
         )
 
         print(f"DEBUG - update_result matched={update_result.matched_count}, modified={update_result.modified_count}")

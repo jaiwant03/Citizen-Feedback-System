@@ -22,9 +22,21 @@ def token_required(allowed_roles=None):
                 if user_email:
                     db = current_app.db
                     user = db.users.find_one({"email": user_email})
-                    if user and user.get("role") in allowed_roles:
+
+                    # Auto-create worker account if not existing (worker dashboard lightweight auth)
+                    if not user:
+                        user = {
+                            "email": user_email,
+                            "role": "worker",
+                            "name": user_email.split("@")[0]
+                        }
+                        db.users.insert_one(user)
+
+                    if user.get("role") in allowed_roles:
                         request.user = user
                         return f(*args, **kwargs)
+                    return jsonify({"error": "Unauthorized role"}), 403
+
                 return jsonify({"error": "Token is missing!"}), 401
 
             try:

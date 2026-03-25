@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getReports, updateStatus, deleteReport } from '../services/api';
 import { toast } from 'react-toastify';
 import { MapPin, Image as ImageIcon, Trash2, LogOut, RefreshCw, Filter, AlertOctagon } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import axios from 'axios';
 
 export default function AdminDashboard() {
@@ -26,6 +26,7 @@ export default function AdminDashboard() {
   const fetchAnalytics = async () => {
     try {
       const res = await axios.get('http://localhost:5000/api/admin/analytics');
+      console.log("Analytics:", res.data);
       setAnalytics(res.data);
     } catch(err) {
       console.error(err);
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
     try {
       await updateStatus(id, newStatus);
       toast.success('Status updated');
-      fetchReports();
+      await Promise.all([fetchReports(), fetchAnalytics()]);
     } catch (error) {
       console.error(error);
       toast.error('Failed to update status');
@@ -84,6 +85,35 @@ export default function AdminDashboard() {
     if (!a.isEmergency && b.isEmergency) return 1;
     return 0;
   });
+
+  const computedAnalytics = useMemo(() => {
+    const resolvedReports = reports.filter(
+      (r) => r.status === 'Resolved' && r.createdAt && r.resolvedAt
+    );
+
+    const grouped = resolvedReports.reduce((acc, report) => {
+      const created = new Date(report.createdAt);
+      const resolved = new Date(report.resolvedAt);
+      if (isNaN(created) || isNaN(resolved) || resolved <= created) return acc;
+
+      const hours = (resolved - created) / (1000 * 60 * 60);
+      const issueType = report.issueType || 'Unknown';
+
+      if (!acc[issueType]) {
+        acc[issueType] = { total: 0, count: 0 };
+      }
+      acc[issueType].total += hours;
+      acc[issueType].count += 1;
+      return acc;
+    }, {});
+
+    return Object.entries(grouped).map(([issueType, data]) => ({
+      issueType,
+      avgResolutionTime: Number((data.total / data.count).toFixed(2))
+    }));
+  }, [reports]);
+
+  const chartData = analytics.length ? analytics : computedAnalytics;
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -178,19 +208,42 @@ export default function AdminDashboard() {
 
       {/* Analytics Chart */}
       <div className="mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h2 className="text-xl font-bold mb-4 text-gray-900">Resolution Time Analytics (Hours)</h2>
-        <div className="h-64 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={analytics}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-              <XAxis dataKey="issueType" tick={{fill: '#6B7280'}} axisLine={false} tickLine={false} />
-              <YAxis tick={{fill: '#6B7280'}} axisLine={false} tickLine={false} />
-              <Tooltip cursor={{fill: '#F3F4F6'}} contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
-              <Legend />
-              <Bar dataKey="avgResolutionTime" fill="#4f46e5" radius={[4, 4, 0, 0]} name="Avg Resolution Time (hrs)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <h2 className="text-xl font-bold mb-1 text-gray-900 flex items-center gap-2">
+          <span className="text-2xl">📊</span>
+          Average Resolution Time by Issue Type
+        </h2>
+        <p className="text-sm text-gray-500 mb-6">Time in hours from submission to resolution</p>
+        
+        {!chartData || chartData.length === 0 ? (
+          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-gray-500 text-center">No analytics data available</p>
+          </div>
+        ) : (
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis dataKey="issueType" stroke="#333" tick={{fill: '#333', fontSize: 12}} />
+                <YAxis stroke="#333" tick={{fill: '#333', fontSize: 12}} label={{ value: 'Hours', angle: -90, position: 'insideLeft' }} />
+                <Tooltip 
+                  cursor={{stroke: '#4f46e5', strokeWidth: 2}}
+                  contentStyle={{borderRadius: '8px', border: '1px solid #E5E7EB', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                  formatter={(value) => [`${value.toFixed(2)} hrs`, 'Avg Resolution Time']}
+                />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="avgResolutionTime"
+                  stroke="#ff7300"
+                  strokeWidth={4}
+                  dot={{ r: 5, fill: '#ff7300' }}
+                  activeDot={{ r: 8, fill: '#ff5c00' }}
+                  name="Avg Resolution Time"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
 
       {/* Empty State */}
@@ -210,7 +263,18 @@ export default function AdminDashboard() {
               
               {/* Image */}
               <div className="relative h-56 bg-gray-100 overflow-hidden">
-                {report.image ? (
+                {report.status === 'Resolved' && report.completionImage ? (
+                  <div className="relative">
+                    <img
+                      src={report.completionImage}
+                      alt="Completion"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-2 left-2 bg-green-600 text-white px-2 py-1 rounded-md text-xs font-bold shadow-md">
+                      ✅ COMPLETED
+                    </div>
+                  </div>
+                ) : report.image ? (
                   <img
                     src={report.image}
                     alt="Issue"
@@ -302,6 +366,20 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                   </div>
+
+                  {/* Worker Completion Info */}
+                  {report.status === 'Resolved' && report.assignedWorker && (
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-3">
+                      <div className="flex items-center text-sm text-green-800 font-medium mb-1">
+                        <span className="text-lg mr-2">👷</span>
+                        Completed by Worker
+                      </div>
+                      <p className="text-xs text-green-700">
+                        <strong>{report.assignedWorker}</strong>
+                        {report.resolvedAt && ` • ${new Date(report.resolvedAt).toLocaleDateString()} ${new Date(report.resolvedAt).toLocaleTimeString()}`}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Actions */}
                   <div className="flex items-center justify-between gap-4">

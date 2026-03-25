@@ -5,6 +5,7 @@ import ReportIssue from './pages/ReportIssue';
 import Success from './pages/Success';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import WorkerDashboard from './pages/WorkerDashboard';
 import MapPage from './pages/MapPage';
 import RatingPage from './pages/RatingPage';
 import { ToastContainer } from 'react-toastify';
@@ -15,15 +16,17 @@ function App() {
     <Router>
       <div className="min-h-screen flex flex-col bg-slate-50">
         <Navbar />
-        <main className="flex-grow flex flex-col mt-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <main className="grow flex flex-col mt-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/report" element={<ReportIssue />} />
             <Route path="/success" element={<Success />} />
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/worker" element={<WorkerDashboard />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/rate/:id/:token" element={<RatingPage />} />
+            <Route path="*" element={<div className="text-center p-12">Page not found</div>} />
           </Routes>
         </main>
         <ToastContainer position="bottom-right" />

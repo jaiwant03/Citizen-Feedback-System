@@ -1,10 +1,9 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Home, AlertTriangle, User, Globe, Map as MapIcon, Briefcase } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function Navbar() {
   const { t, i18n } = useTranslation();
-  const location = useLocation();
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
@@ -14,7 +13,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
-            <Link to="/" className="flex-shrink-0 flex items-center group">
+            <Link to="/" className="shrink-0 flex items-center group">
               <AlertTriangle className="h-8 w-8 text-indigo-600 mr-2 group-hover:scale-110 transition-transform" />
               <span className="font-bold text-2xl tracking-tight text-gray-900">Road<span className="text-indigo-600">Fix</span></span>
             </Link>

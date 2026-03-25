@@ -1,3 +1,5 @@
+import os
+import jwt
 from flask import Blueprint, request, jsonify, current_app
 from bson.objectid import ObjectId
 from middleware.auth import token_required
@@ -5,6 +7,37 @@ from datetime import datetime
 from routes.report_routes import send_status_email
 
 worker_bp = Blueprint('worker_bp', __name__)
+
+@worker_bp.route('/login', methods=['POST'])
+def worker_login():
+    data = request.json or {}
+    email = data.get('email')
+
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
+
+    db = current_app.db
+    user = db.users.find_one({'email': email})
+
+    if user and user.get('role') not in ['worker', 'admin']:
+        return jsonify({'error': 'User is not a worker or admin'}), 403
+
+    if not user:
+        user = {'email': email, 'role': 'worker', 'name': email.split('@')[0]}
+        db.users.insert_one(user)
+
+    secret = os.environ.get('JWT_SECRET', 'my_super_secret_key_123')
+    token = jwt.encode({'email': email, 'role': user['role']}, secret, algorithm='HS256')
+
+    # pyjwt v2 returns str, old returns bytes
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
+
+    return jsonify({
+        'message': 'Worker login successful',
+        'token': token,
+        'user': {'email': email, 'role': user['role']}
+    }), 200
 
 @worker_bp.route('/tasks', methods=['GET'])
 @token_required(["worker", "admin"])

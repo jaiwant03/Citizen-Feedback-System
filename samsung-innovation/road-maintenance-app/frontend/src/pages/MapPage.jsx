@@ -73,7 +73,7 @@ export default function MapPage() {
             icon={icons[report.status] || icons['Pending']}
           >
             <Popup className="rounded-xl overflow-hidden">
-              <div className="font-sans min-w-[200px]">
+              <div className="font-sans min-w-50">
                 <h3 className="font-bold text-lg capitalize mb-1 text-gray-900">{report.issueType}</h3>
                 <p className="text-sm text-gray-600 mb-3">{report.description}</p>
                 <div className="flex flex-wrap items-center gap-2">

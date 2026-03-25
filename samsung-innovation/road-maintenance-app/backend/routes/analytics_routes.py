@@ -36,23 +36,25 @@ def get_analytics():
             }},
             {"$project": {
                 "issueType": "$_id",
-                "avgResolutionTime": 1,
+                "avgResolutionTime": {"$round": ["$avgResolutionTime", 2]},
                 "_id": 0
-            }}
+            }},
+            # Sort by issueType for consistent output
+            {"$sort": {"issueType": 1}}
         ]
         
         results = list(db.reports.aggregate(pipeline))
         
-        # Also return a fallback summary if the pipeline yields None or empty
-        # and we want to prevent empty frontend charts if there's no data yet.
+        # Ensure we always return a valid array
         if not results:
-            results = [
-                {"issueType": "Pothole", "avgResolutionTime": 0},
-                {"issueType": "Crack", "avgResolutionTime": 0},
-                {"issueType": "Damage", "avgResolutionTime": 0}
-            ]
-            
+            # Return empty array if no resolved complaints exist
+            results = []
+        
+        # Filter out any None or undefined values
+        results = [r for r in results if r.get('issueType') and r.get('avgResolutionTime') is not None]
+        
         return jsonify(results), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Analytics error: {str(e)}")
+        return jsonify([]), 200
